@@ -83,7 +83,7 @@ SELECT SUBSTRING(service_description, 1, 15) AS description, sales_ytd
 FROM landscaping_services
 WHERE hourly_rate >
 (SELECT AVG(hourly_rate)
- FROM landscaping_services);
+ FROM landscaping_services)
 GO
 
 -- Verify inserts
