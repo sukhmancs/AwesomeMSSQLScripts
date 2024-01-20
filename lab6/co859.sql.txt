@@ -1,0 +1,197 @@
+/*I, Sukhmanjeet Singh, student number 000838215, certify that this material is my original work. No other person's work has been used without due acknowledgment and I have not made my work available to anyone else.*/
+/*******************************************************
+Script: co859.sql
+Author: Sukhmanjeet Singh
+Date: November 13, 2023
+Description: Create co859 Database objects for Sukhman's outdoor solutions, which includes a precedure to delete the records based on the cut-off date.
+********************************************************/
+
+-- Setting NOCOUNT ON suppresses completion messages for each INSERT
+SET NOCOUNT ON
+
+-- Set date format to year, month, day
+SET DATEFORMAT ymd;
+
+-- Make the master database the current database
+USE master
+
+-- If database co859 exists, drop it
+IF EXISTS (SELECT * FROM sysdatabases WHERE name = 'co859')
+BEGIN
+  ALTER DATABASE co859 SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+  DROP DATABASE co859;
+END
+GO
+
+-- Create the co859 database
+CREATE DATABASE co859;
+GO
+
+-- Make the co859 database the current database
+USE co859;
+
+-- Create landscaping_services table
+CREATE TABLE landscaping_services (
+  service_id INT PRIMARY KEY, 
+  service_description VARCHAR(30), 
+  service_type CHAR(1) CHECK (service_type IN ('D', 'G', 'C')), 
+  hourly_rate MONEY,
+  sales_ytd MONEY); 
+
+-- Create sales table
+CREATE TABLE sales (
+	sales_id INT PRIMARY KEY, 
+	sales_date DATE, 
+	amount MONEY, 
+	service_id INT FOREIGN KEY REFERENCES landscaping_services(service_id));
+GO
+
+-- Insert landscaping_services records
+INSERT INTO landscaping_services VALUES (10, 'Design', 'D', 50, 340);
+INSERT INTO landscaping_services VALUES (20, 'Lawn Care', 'C', 120, 240);
+INSERT INTO landscaping_services VALUES (30, 'Gardening', 'G', 150, 700);
+INSERT INTO landscaping_services VALUES (40, 'Hardscape Constructions ', 'G', 110, 430);
+INSERT INTO landscaping_services VALUES (50, 'Cleaning', 'C', 70, 240);
+
+-- Insert sales records
+INSERT INTO sales VALUES (1, '2023-09-19', 50, 10);
+INSERT INTO sales VALUES (2, '2023-09-20', 150, 30);
+INSERT INTO sales VALUES (3, '2023-09-21', 120, 10);
+INSERT INTO sales VALUES (4, '2023-09-22', 300, 40);
+INSERT INTO sales VALUES (5, '2023-09-23', 70, 50);
+INSERT INTO sales VALUES (6, '2023-09-24', 120, 20);
+INSERT INTO sales VALUES (7, '2023-09-25', 150, 30);
+INSERT INTO sales VALUES (8, '2023-09-26', 70, 10);
+INSERT INTO sales VALUES (9, '2023-09-27', 120, 20);
+INSERT INTO sales VALUES (10, '2023-09-28', 90, 50);
+INSERT INTO sales VALUES (11, '2023-09-29', 50, 10);
+INSERT INTO sales VALUES (12, '2023-09-30', 400, 30);
+INSERT INTO sales VALUES (13, '2023-10-01', 50, 10);
+INSERT INTO sales VALUES (14, '2023-10-02', 130, 40);
+INSERT INTO sales VALUES (15, '2023-10-03', 80, 50);
+GO
+
+-- Create Index on column service_description
+CREATE INDEX IX_landscaping_services_service_description
+ON landscaping_services (service_description);
+GO
+
+-- Create View for landscaping_services master table  
+CREATE VIEW high_end_landscaping_services 
+AS
+SELECT SUBSTRING(service_description, 1, 15) AS description, sales_ytd
+FROM landscaping_services
+WHERE hourly_rate >
+(SELECT AVG(hourly_rate)
+ FROM landscaping_services);
+GO
+
+-- Create a new table to verify inserts
+CREATE TABLE verify (
+  table_name varchar(30), 
+  actual INT, 
+  expected INT);
+GO
+
+-- Verify inserts
+INSERT INTO verify VALUES('landscaping_services', (SELECT COUNT(*) FROM landscaping_services), 5);
+INSERT INTO verify VALUES('sales', (SELECT COUNT(*) FROM sales), 15);
+PRINT 'Verification';
+SELECT table_name, actual, expected, expected - actual discrepancy FROM verify;
+DROP TABLE verify;
+GO
+
+-- Alter the master table to add the last_activity_date column
+ALTER TABLE landscaping_services
+ADD last_activity_date DATE NULL;
+GO
+
+-- Update last_activity_date for existing records within the last 2 years
+UPDATE landscaping_services
+SET last_activity_date = DATEADD(DAY, -ROUND(RAND() * 730, 0), GETDATE()) 
+Where service_id = 10;
+
+UPDATE landscaping_services
+SET last_activity_date = DATEADD(DAY, -ROUND(RAND() * 730, 0), GETDATE()) 
+Where service_id = 20;
+
+UPDATE landscaping_services
+SET last_activity_date = DATEADD(DAY, -ROUND(RAND() * 730, 0), GETDATE()) 
+Where service_id = 30;
+
+UPDATE landscaping_services
+SET last_activity_date = DATEADD(DAY, -ROUND(RAND() * 730, 0), GETDATE()) 
+Where service_id = 40;
+
+UPDATE landscaping_services
+SET last_activity_date = DATEADD(DAY, -ROUND(RAND() * 730, 0), GETDATE()) 
+Where service_id = 50;
+GO
+
+-- Insert a new record into your master table and ensure that the last_activity_date is more than 3 years ago
+INSERT INTO landscaping_services VALUES (60, 'Toilet Cleaning', 'C', 70, 250, DATEADD(YEAR, -4, GETDATE()));
+GO
+
+-- This stored procedure, purge_services, is designed to remove records from the landscaping_services table based on a cut-off date.
+
+-- Parameters:
+--   @cut_off_date (DATE): The date used as the cut-off point for deleting records.
+--   @update (INT, optional, default = 0): If set to 1, the procedure will perform the actual deletion; otherwise, it will only display the records that would be deleted.
+
+CREATE PROCEDURE purge_services
+    @cut_off_date DATE,
+    @update INT = 0
+AS
+BEGIN 
+	/*
+    If @update is set to 1, the procedure will delete records from the landscaping_services table where last_activity_date is before @cut_off_date.
+    If @update is set to 0 (or not provided), the procedure will display records that would be deleted but will not perform the actual deletion.
+    */
+
+	IF @update = 1
+	BEGIN 		
+		-- Delete any records from the master table where last_activity_date is before @cut_off_date
+		DELETE FROM landscaping_services
+		WHERE last_activity_date < @cut_off_date;
+	END
+	ELSE  -- No update
+	BEGIN
+		PRINT 'Record(s) that would be deleted';
+		
+		-- Show the records from the master table that would be deleted
+		SELECT service_id, service_description, service_type, hourly_rate, sales_ytd, last_activity_date
+		FROM landscaping_services
+		WHERE last_activity_date < @cut_off_date;
+	END
+END
+GO
+
+-- Verification
+PRINT 'Verify procedure'
+PRINT 'Master Table Before Changes'
+
+-- SELECT all rows and columns from the master table
+SELECT * 
+FROM landscaping_services
+
+-- Calculate the date 3 years ago from today
+DECLARE @three_years_ago DATE;
+SET @three_years_ago = DATEADD(YEAR, -3, GETDATE());
+
+-- Execute procedure passing a date 3 years ago from today
+EXEC purge_services @cut_off_date=@three_years_ago 
+
+PRINT 'After 1st Call To Procedure'
+
+-- SELECT all rows and columns from the master table
+SELECT * 
+FROM landscaping_services
+
+-- Execute procedure passing a date 3 years ago from today and 1 for @Update 
+EXEC purge_services @cut_off_date=@three_years_ago, @update=1
+
+PRINT 'After 2nd Call To Procedure'
+
+-- SELECT all rows and columns from the master table
+SELECT * 
+FROM landscaping_services

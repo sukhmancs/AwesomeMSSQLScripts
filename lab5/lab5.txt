@@ -1,0 +1,131 @@
+/*I, Sukhmanjeet Singh, student number 000838215, certify that this material is my original work. No other person's work has been used without due acknowledgment and I have not made my work available to anyone else.*/
+/*******************************************************
+Script: lab5.txt
+Author: Sukhmanjeet Singh
+Date: October 24, 2023
+Description: Create queries based on assignment instructions
+********************************************************/
+
+-- Set the database context to 'chdb'
+USE chdb;
+
+PRINT 'GROUP 1 SELECT B';
+
+-- Show a count of male patients that weigh less than the average weight of female patients.
+SELECT COUNT(*) AS male_patient_counts
+FROM patients
+WHERE gender = 'M' 
+AND patient_weight < 
+(SELECT AVG(patient_weight) 
+ FROM patients
+ WHERE gender = 'F');
+GO
+
+PRINT 'GROUP 1 SELECT C';
+
+-- Find the first name, last name, and height of the tallest female patient, there may be more than one.
+SELECT first_name, last_name, patient_height
+FROM patients
+WHERE gender = 'F' 
+AND patient_height = 
+(SELECT TOP 1 patient_height
+ FROM patients
+ WHERE gender = 'F'
+ ORDER BY patient_height DESC)
+GO
+
+PRINT 'GROUP 2 SELECT C';
+
+-- Show a count of patients by province except for Ontario.
+SELECT province_id, COUNT(*) AS patient_counts
+FROM patients
+WHERE province_id != 'ON'
+GROUP BY province_id;
+GO
+
+PRINT 'GROUP 2 SELECT B';
+
+-- Show the number of current admissions (no discharge date) each attending physician has.
+SELECT a.attending_physician_id, p.first_name, p.last_name, COUNT(a.patient_id) AS admission_counts
+FROM admissions a
+JOIN physicians p
+ON a.attending_physician_id = p.physician_id
+WHERE discharge_date IS NULL
+GROUP BY a.attending_physician_id, p.first_name, p.last_name;
+GO
+
+PRINT 'GROUP 3 SELECT C';
+
+-- List the physician id, physician's first name, physician's last name, nursing unit, and room number for every current admission (no discharge date) whose attending physician is a Pediatrician. Order the results by the nursing unit then room number.
+SELECT physician_id, first_name, last_name, nursing_unit_id, room
+FROM physicians p
+JOIN admissions a
+ON p.physician_id = A.attending_physician_id
+WHERE discharge_date IS NULL 
+AND specialty = 'Pediatrician'
+ORDER BY nursing_unit_id, room;
+GO
+
+PRINT 'GROUP 3 SELECT D';
+
+-- List the department id, department name, manager first name, manager last name, purchase order id, and the total amount for any purchase order worth over $1,500.00. Order the results by department id.
+SELECT d.department_id, department_name, manager_first_name, manager_last_name, purchase_order_id, total_amount
+FROM departments d
+JOIN purchase_orders p
+ON d.department_id = p.department_id
+WHERE total_amount > '1500.00'
+ORDER BY d.department_id
+GO
+
+PRINT 'GROUP 4 SELECT A';
+
+-- List the physician id, physician's first name, physician's last name, and specialty of any physician who has had an encounter with the patient named Walter Mitty.
+
+SELECT physician_id, f.first_name, f.last_name, specialty
+FROM admissions a
+JOIN patients p
+ON a.patient_id = p.patient_id
+JOIN physicians f
+ON a.attending_physician_id = f.physician_id
+WHERE p.first_name = 'Walter'
+AND p.last_name = 'Mitty';
+GO
+
+PRINT 'GROUP 4 SELECT B';
+
+-- List the patient id, patient first name, patient last name, nursing unit and primary diagnosis of any current admission (no discharge date) whose attending physician s specialty is Internist.
+SELECT p.patient_id, p.first_name, p.last_name, nursing_unit_id, primary_diagnosis
+FROM admissions a
+JOIN patients p
+ON a.patient_id = p.patient_id
+JOIN physicians f
+ON a.attending_physician_id = f.physician_id
+WHERE discharge_date IS NULL 
+AND specialty = 'Internist';
+GO
+
+PRINT 'GROUP 5 SELECT B';
+
+-- List the patient first name concatenated with a space and patient last name and aliased as patient, nursing unit, room, and medication description for any current admissions (no discharge date) who are allergic to Penicillin.
+SELECT CONCAT(first_name, ' ', last_name) AS patient, nursing_unit_id, room, medication_description
+FROM unit_dose_orders u
+JOIN medications m
+ON u.medication_id = m.medication_id
+JOIN admissions a
+ON u.patient_id = a.patient_id
+JOIN patients p
+ON u.patient_id = p.patient_id
+WHERE discharge_date IS NULL
+AND allergies = 'Penicillin';
+GO
+
+PRINT 'GROUP 6 SELECT B';
+
+-- List the purchase order id, order date, and department id for any purchase order that has no associated purchase order lines.
+SELECT purchase_order_id, order_date, department_id
+FROM purchase_orders po
+WHERE NOT EXISTS 
+(SELECT 1
+ FROM purchase_order_lines pol
+ WHERE po.purchase_order_id = pol.purchase_order_id);
+GO

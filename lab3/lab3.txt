@@ -1,0 +1,79 @@
+I, Sukhmanjeet Singh, student number 000838215, certify that this material is my original work. No other person's work has been used without due acknowledgment and I have not made my work available to anyone else.
+
+Insert Error
+------------
+Violation of PRIMARY KEY constraint 'PK_sales'. Cannot insert duplicate key in object 'dbo.sales'.
+
+Delete Error
+------------
+The DELETE statement conflicted with REFERENCE constraint 'FK_sales_service_id'. The conflict occured in database 'lab3', table 'dbo.sales', column 'service_id'.
+
+SQL query output
+----------------
+SELECT 1 - Show the tables exist
+Database             Table
+-------------------- --------------------
+lab3                 landscaping_maintain
+lab3                 sales
+
+(2 rows affected)
+
+SELECT 2 - Show that the tables have the correct columns
+Table                Column               Pos         Type                 Length
+-------------------- -------------------- ----------- -------------------- -----------
+landscaping_maintain service_id           1           int                  NULL
+landscaping_maintain service_description  2           varchar              25
+landscaping_maintain service_type         3           char                 1
+landscaping_maintain hourly_rate          4           money                NULL
+landscaping_maintain sales_ytd            5           money                NULL
+sales                sales_id             1           int                  NULL
+sales                sales_date           2           date                 NULL
+sales                amount               3           money                NULL
+sales                service_id           4           int                  NULL
+
+(9 rows affected)
+
+SELECT 3 - Show that all the constraints (PK, CK and FK) were set up properly
+Table           Column               Constraint                          Type        Constraint_Details
+--------------- -------------------- ----------------------------------- ----------- ---------------------------------------------------------------------------
+landscaping_mai service_id           PK_landscaping_maintaince_services  PRIMARY KEY landscaping_mai(service_id)
+landscaping_mai service_type         CK_landscaping_maintaince_services_ CHECK       ([service_type]='M' OR [service_type]='C' OR [service_type]='D')
+sales           sales_id             PK_sales                            PRIMARY KEY sales(sales_id)
+sales           service_id           FK_sales_service_id                 FOREIGN KEY sales(service_id)
+
+(4 rows affected)
+
+SELECT 4 - Show the Master table data
+service_id  service_description       service_type hourly_rate           sales_ytd
+----------- ------------------------- ------------ --------------------- ---------------------
+10          Landscape Design          D            50.00                 340.00
+20          Lawn Care                 D            120.00                240.00
+30          Planting and Gardening    M            150.00                700.00
+40          Hardscape Constructions   C            110.00                430.00
+50          Tree Care                 M            70.00                 240.00
+
+(5 rows affected)
+
+SELECT 5 - Show the Sales table data
+sales_id    sales_date amount                service_id
+----------- ---------- --------------------- -----------
+1           2023-09-19 50.00                 10
+2           2023-09-20 150.00                30
+3           2023-09-21 120.00                10
+4           2023-09-22 300.00                40
+5           2023-09-23 70.00                 50
+6           2023-09-24 120.00                20
+7           2023-09-25 150.00                30
+8           2023-09-26 70.00                 10
+9           2023-09-27 120.00                20
+10          2023-09-28 90.00                 50
+11          2023-09-29 50.00                 10
+12          2023-09-30 400.00                30
+13          2023-10-01 50.00                 10
+14          2023-10-02 130.00                40
+15          2023-10-03 80.00                 50
+
+(15 rows affected)
+
+
+Completion time: 2023-09-24T16:06:30.9080156-04:00
